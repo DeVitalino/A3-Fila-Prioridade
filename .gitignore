@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+.streamlit/secrets.toml
+python/README.md
+
+# Java
+target/
+*.class
+*.jar
+*.war
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+#Docs
+docs/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos gerados em execução (o exemplo versionado é sql/logs_exemplo.sql)
+sql/logs.sql
