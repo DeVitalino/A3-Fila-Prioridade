@@ -26,5 +26,5 @@ docs/
 .DS_Store
 Thumbs.db
 
-# Arquivos gerados em execução (o exemplo versionado é sql/logs_exemplo.sql)
+# Arquivos gerados em execução
 sql/logs.sql
