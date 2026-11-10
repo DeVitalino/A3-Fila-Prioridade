@@ -1,4 +1,4 @@
-# Fila de Banco com Prioridade e Justiça (A3)
+# Fila de Banco com Prioridade (A3)
 
 Projeto da avaliação A3 (Filas de Prioridade). Simula uma agência bancária com três categorias de cliente (prioritário, VIP e comum), vários guichês e um relógio simulado. Usa um heap binário implementado pelo grupo, aging, cota rotativa, SLA e detecção de starvation, e gera um log de auditoria em SQL.
 
