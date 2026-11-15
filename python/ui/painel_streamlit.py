@@ -136,6 +136,7 @@ class PainelStreamlit:
                               format_func=lambda t: f"{t.nome} ({t.minutos} min)")
             if st.button("➕ Gerar cliente"):
                 servico.gerar_cliente(categoria, tipo)
+                st.rerun()
         
         with col2:
             st.markdown("**🎲 Clientes aleatórios**")
@@ -145,6 +146,7 @@ class PainelStreamlit:
                 for _ in range(int(qtd)):
                     cat, idade, tp = st.session_state.gerador.sortear_cliente()
                     servico.gerar_cliente(cat, tp, idade)
+                st.rerun()
         
         with col3:
             st.markdown("**⏩ Avançar o tempo**")
@@ -153,12 +155,14 @@ class PainelStreamlit:
             if st.button("⏩ Avançar"):
                 gerador = st.session_state.gerador if com_chegadas else None
                 servico.avancar_tempo(int(minutos), gerador)
+                st.rerun()
         
         with col4:
             st.markdown("**🧪 Teste de estresse**")
             qtd_estresse = st.number_input("Clientes no estresse", 10, 1000, 200)
             if st.button("🧪 Rodar teste"):
                 servico.rodar_estresse(int(qtd_estresse), st.session_state.gerador)
+                st.rerun()
 
     def mostrar_exportacao(self):
         servico = st.session_state.servico
