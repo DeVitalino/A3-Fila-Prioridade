@@ -196,12 +196,16 @@ class PainelStreamlit:
             fila_chegada = servico.fila_por_chegada()
             linhas_chegada = []
             for posicao, c in enumerate(fila_chegada, start=1):
+                hora_chegada = servico.relogio.para_datetime(c.minuto_chegada).strftime("%H:%M")
+                emoji = "👑" if c.categoria == Categoria.NIVEL_4 else ""
+                
                 linhas_chegada.append({
-                    "Pos": posicao,
-                    "Senha": c.senha,
+                    "Ordem": posicao,
+                    "Senha": f"{emoji}{c.senha}",
                     "Nível": c.categoria.nome_curto,
                     "Idade": f"{c.idade}a",
                     "Serviço": c.tipo_servico.nome,
+                    "Chegada": hora_chegada,
                     "Espera": f"{c.espera(agora)} min",
                     "Pontuação": f"{c.pontuacao_atual:.2f}",
                     "SLA": servico.situacao_sla(c)
@@ -217,16 +221,25 @@ class PainelStreamlit:
             st.caption("Ordenada por prioridade + envelhecimento - próximos a serem chamados")
             
             fila_ordenada = servico.fila_ordenada()
+            
+            # Criar mapeamento de senha para ordem de chegada
+            fila_chegada = servico.fila_por_chegada()
+            ordem_chegada_map = {c.senha: idx + 1 for idx, c in enumerate(fila_chegada)}
+            
             linhas_ordenada = []
             for posicao, c in enumerate(fila_ordenada, start=1):
-                # Destacar NIVEL_4
+                hora_chegada = servico.relogio.para_datetime(c.minuto_chegada).strftime("%H:%M")
                 emoji = "👑" if c.categoria == Categoria.NIVEL_4 else ""
+                ordem_original = ordem_chegada_map.get(c.senha, posicao)
+                
                 linhas_ordenada.append({
                     "Pos": posicao,
+                    "Ordem": ordem_original,
                     "Senha": f"{emoji}{c.senha}",
                     "Nível": c.categoria.nome_curto,
                     "Idade": f"{c.idade}a",
                     "Serviço": c.tipo_servico.nome,
+                    "Chegada": hora_chegada,
                     "Espera": f"{c.espera(agora)} min",
                     "Pontuação": f"{c.pontuacao_atual:.2f}",
                     "SLA": servico.situacao_sla(c)
