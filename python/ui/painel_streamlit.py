@@ -140,12 +140,17 @@ class PainelStreamlit:
         
         with col2:
             st.markdown("**🎲 Clientes aleatórios**")
-            qtd = st.number_input("Quantidade", 1, 100, 5, key="qtd_aleatorios")
+            qtd = st.number_input("Quantidade", 1, 500, 5, key="qtd_aleatorios")
             st.caption("Distribuição: 1% N4, 12% N3, 10% N2, 77% N1")
             if st.button("🎲 Gerar aleatórios"):
-                for _ in range(int(qtd)):
+                quantidade_solicitada = int(qtd)
+                # Gerar TODOS os clientes primeiro (sem alocar a guichês)
+                for i in range(quantidade_solicitada):
                     cat, idade, tp = st.session_state.gerador.sortear_cliente()
-                    servico.gerar_cliente(cat, tp, idade)
+                    # Usar _entrar_na_fila ao invés de gerar_cliente para não chamar _chamar_proximos
+                    servico._entrar_na_fila(cat, tp, idade)
+                # AGORA sim chamar para alocar aos guichês disponíveis
+                servico._chamar_proximos()
                 st.rerun()
         
         with col3:
