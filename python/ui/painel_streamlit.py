@@ -185,7 +185,7 @@ class PainelStreamlit:
     # ---------- painéis ----------
 
     def mostrar_duas_filas(self):
-        """Mostra as duas listas: ordem de chegada e ordem calculada."""
+        """Mostra a fila de clientes aguardando."""
         servico = st.session_state.servico
         agora = servico.relogio.minuto_atual
         
@@ -195,88 +195,31 @@ class PainelStreamlit:
             st.info("✓ Fila vazia - todos já foram atendidos")
             return
         
-        col_chegada, col_calculada = st.columns(2)
+        # Fila de chegada (única lista)
+        st.markdown("#### 📋 Ordem de Chegada")
+        st.caption("Sequência cronológica de entrada na fila")
         
-        # LISTA 1: Ordem de chegada (cronológica)
-        with col_chegada:
-            st.markdown("#### 1️⃣ Ordem de Chegada")
-            st.caption("Sequência cronológica de entrada na fila")
+        fila_chegada = servico.fila_por_chegada()
+        linhas_chegada = []
+        for posicao, c in enumerate(fila_chegada, start=1):
+            hora_chegada = servico.relogio.para_datetime(c.minuto_chegada).strftime("%H:%M")
+            emoji = "👑" if c.categoria == Categoria.NIVEL_4 else ""
             
-            fila_chegada = servico.fila_por_chegada()
-            linhas_chegada = []
-            for posicao, c in enumerate(fila_chegada, start=1):
-                hora_chegada = servico.relogio.para_datetime(c.minuto_chegada).strftime("%H:%M")
-                emoji = "👑" if c.categoria == Categoria.NIVEL_4 else ""
-                tempo_espera = c.espera(agora)
-                
-                # Calcular SLA e status
-                sla_minutos = servico.config.sla[c.categoria]
-                if tempo_espera <= sla_minutos:
-                    status_sla = "DENTRO"
-                else:
-                    status_sla = "FORA"
-                
-                linhas_chegada.append({
-                    "Ordem": posicao,
-                    "Senha": f"{emoji}{c.senha}",
-                    "Nível": c.categoria.nome_curto,
-                    "Idade": f"{c.idade}a",
-                    "Serviço": c.tipo_servico.nome,
-                    "Chegada": hora_chegada,
-                    "Espera": f"{tempo_espera} min",
-                    "Tempo Serv.": f"{c.tipo_servico.minutos} min",
-                    "SLA": f"{sla_minutos} min",
-                    "Status": status_sla,
-                    "Situação": "Aguardando"
-                })
-            
-            if linhas_chegada:
-                df_chegada = pd.DataFrame(linhas_chegada)
-                st.dataframe(df_chegada, use_container_width=True, hide_index=True, height=400)
+            linhas_chegada.append({
+                "Ordem": posicao,
+                "Senha": f"{emoji}{c.senha}",
+                "Nível": c.categoria.nome_curto,
+                "Idade": f"{c.idade}a",
+                "Serviço": c.tipo_servico.nome,
+                "Chegada": hora_chegada,
+                "Tempo Serv.": f"{c.tipo_servico.minutos} min",
+                "SLA": f"{servico.config.sla[c.categoria]} min",
+                "Situação": "Aguardando"
+            })
         
-        # LISTA 2: Ordem calculada (heap/prioridade)
-        with col_calculada:
-            st.markdown("#### 2️⃣ Ordem de Atendimento (Calculada)")
-            st.caption("Ordenada por prioridade + envelhecimento - próximos a serem chamados")
-            
-            fila_ordenada = servico.fila_ordenada()
-            
-            # Criar mapeamento de senha para ordem de chegada
-            fila_chegada = servico.fila_por_chegada()
-            ordem_chegada_map = {c.senha: idx + 1 for idx, c in enumerate(fila_chegada)}
-            
-            linhas_ordenada = []
-            for posicao, c in enumerate(fila_ordenada, start=1):
-                hora_chegada = servico.relogio.para_datetime(c.minuto_chegada).strftime("%H:%M")
-                emoji = "👑" if c.categoria == Categoria.NIVEL_4 else ""
-                ordem_original = ordem_chegada_map.get(c.senha, posicao)
-                tempo_espera = c.espera(agora)
-                
-                # Calcular SLA e status
-                sla_minutos = servico.config.sla[c.categoria]
-                if tempo_espera <= sla_minutos:
-                    status_sla = "DENTRO"
-                else:
-                    status_sla = "FORA"
-                
-                linhas_ordenada.append({
-                    "Pos": posicao,
-                    "Ordem": ordem_original,
-                    "Senha": f"{emoji}{c.senha}",
-                    "Nível": c.categoria.nome_curto,
-                    "Idade": f"{c.idade}a",
-                    "Serviço": c.tipo_servico.nome,
-                    "Chegada": hora_chegada,
-                    "Espera": f"{tempo_espera} min",
-                    "Tempo Serv.": f"{c.tipo_servico.minutos} min",
-                    "SLA": f"{sla_minutos} min",
-                    "Status": status_sla,
-                    "Situação": "Aguardando"
-                })
-            
-            if linhas_ordenada:
-                df_ordenada = pd.DataFrame(linhas_ordenada)
-                st.dataframe(df_ordenada, use_container_width=True, hide_index=True, height=400)
+        if linhas_chegada:
+            df_chegada = pd.DataFrame(linhas_chegada)
+            st.dataframe(df_chegada, use_container_width=True, hide_index=True, height=400)
 
     def mostrar_guiches(self):
         servico = st.session_state.servico
