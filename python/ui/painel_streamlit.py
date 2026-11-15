@@ -39,7 +39,7 @@ class PainelStreamlit:
 
     def mostrar(self):
         st.title("🏦 Simulador de Fila Bancária - Sistema de 4 Níveis de Prioridade")
-        st.caption("Projeto A3 - Estrutura de Dados: Filas de Prioridade com Aging")
+        st.caption("Projeto A3 - Estrutura de Dados: Filas de Prioridade com Envelhecimento")
         self.mostrar_configuracao()
         self.mostrar_controles()
         if st.session_state.get("automatico"):
@@ -85,9 +85,9 @@ class PainelStreamlit:
             qtd_guiches = st.number_input("Guichês", 1, 10, 3)
             semente_txt = st.text_input("Semente (vazio = aleatória)", "42")
             
-            st.subheader("Aging (Fixo)")
-            st.info("✓ Multiplicador: 1.6x a cada 20 minutos\n✓ NIVEL_4 (80+): prioridade absoluta")
-            aging_ativo = st.checkbox("Aging ativo", True)
+            st.subheader("Envelhecimento (Fixo)")
+            st.info("✓ Multiplicador: 1.6x a cada 20 minutos\n✓ NÍVEL 4 (80+): prioridade absoluta")
+            aging_ativo = st.checkbox("Envelhecimento ativo", True)
             intervalo = st.number_input("Recalcular a cada (min)", 1, 60, 5)
             
             st.subheader("Cota Rotativa")
@@ -95,6 +95,7 @@ class PainelStreamlit:
             cota_n = st.number_input("Prioritários seguidos antes de 1 comum (N)", 1, 20, 3)
             
             st.subheader("SLA por Nível")
+            st.caption("SLA = Tempo máximo de espera tolerado")
             sla_n4 = st.number_input("SLA Nível 4 (80+) - min", 1, 240, 10)
             sla_n3 = st.number_input("SLA Nível 3 (60-79) - min", 1, 240, 15)
             sla_n2 = st.number_input("SLA Nível 2 (PCD) - min", 1, 240, 20)
@@ -213,7 +214,7 @@ class PainelStreamlit:
         # LISTA 2: Ordem calculada (heap/prioridade)
         with col_calculada:
             st.markdown("#### 2️⃣ Ordem de Atendimento (Calculada)")
-            st.caption("Ordenada por prioridade + aging - próximos a serem chamados")
+            st.caption("Ordenada por prioridade + envelhecimento - próximos a serem chamados")
             
             fila_ordenada = servico.fila_ordenada()
             linhas_ordenada = []
@@ -261,6 +262,13 @@ class PainelStreamlit:
             st.info("Nenhum atendimento realizado ainda")
             return
         
+        # Dicionário para traduzir motivos
+        traducao_motivo = {
+            "NORMAL": "NORMAL",
+            "AGING": "ENVELHECIMENTO",
+            "COTA": "COTA"
+        }
+        
         linhas = []
         for a in reversed(atendimentos):
             emoji = "👑" if a.cliente.categoria == Categoria.NIVEL_4 else ""
@@ -268,12 +276,13 @@ class PainelStreamlit:
                 "Senha": f"{emoji}{a.cliente.senha}",
                 "Nível": a.cliente.categoria.nome_curto,
                 "Idade": f"{a.cliente.idade}a",
+                "Serviço": a.cliente.tipo_servico.nome,  # ADICIONADO
                 "Guichê": a.id_guiche,
                 "Início": st.session_state.servico.relogio.para_datetime(a.minuto_inicio).strftime("%H:%M"),
                 "Espera": f"{a.tempo_espera} min",
                 "SLA": f"{a.sla_minutos} min",
                 "Status": a.status_sla,
-                "Motivo": a.motivo
+                "Motivo": traducao_motivo.get(a.motivo, a.motivo)  # TRADUZIDO
             })
         
         df = pd.DataFrame(linhas)
