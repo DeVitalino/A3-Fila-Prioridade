@@ -8,9 +8,10 @@ class GeradorLogSql:
     def gerar(self, guiches, eventos, atendimentos):
         por_cliente = {a.cliente.id_cliente: a for a in atendimentos}
         linhas = [
-            "-- logs.sql gerado pelo simulador (versão Python)",
-            "-- rode sql/schema.sql antes deste arquivo",
-            "USE fila_banco;",
+            "-- logsA3.sql gerado pelo simulador",
+            "-- Sistema de 4 Níveis de Prioridade com Aging 1.6x",
+            "-- Rode BancoDadosA3/schema.sql antes deste arquivo",
+            "USE banco_dados_a3;",
             "SET NAMES utf8mb4;",
             "",
         ]
@@ -30,7 +31,7 @@ class GeradorLogSql:
             arquivo.write(texto)
 
     def _limpeza_e_guiches(self, guiches):
-        # apaga na ordem inversa das chaves estrangeiras para poder rodar de novo
+        # Apaga na ordem inversa das chaves estrangeiras para poder rodar de novo
         linhas = [
             "START TRANSACTION;",
             "DELETE FROM atendimentos;",
@@ -49,9 +50,9 @@ class GeradorLogSql:
         c = evento.cliente
         return [
             "START TRANSACTION;",
-            "INSERT INTO clientes (id_cliente, senha, categoria, tipo_servico, minutos_servico, data_hora_chegada) "
+            "INSERT INTO clientes (id_cliente, senha, categoria, idade, tipo_servico, minutos_servico, data_hora_chegada) "
             f"VALUES ({c.id_cliente}, {self._texto(c.senha)}, {self._texto(c.categoria.name)}, "
-            f"{self._texto(c.tipo_servico.nome)}, {c.tipo_servico.minutos}, {self._data(c.minuto_chegada)});",
+            f"{c.idade}, {self._texto(c.tipo_servico.nome)}, {c.tipo_servico.minutos}, {self._data(c.minuto_chegada)});",
             self._insert_evento(evento),
             "COMMIT;",
             "",
