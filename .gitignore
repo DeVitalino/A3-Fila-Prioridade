@@ -6,7 +6,7 @@ __pycache__/
 venv/
 *.egg-info/
 .streamlit/secrets.toml
-python/README.md
+python/venv/
 
 # Java
 target/
@@ -19,7 +19,7 @@ target/
 .vscode/
 *.iml
 
-#Docs
+# Docs
 docs/
 
 # Sistema operacional
@@ -27,4 +27,6 @@ docs/
 Thumbs.db
 
 # Arquivos gerados em execução
-sql/logs.sql
+BancoDadosA3/logs.sql
+BancoDadosA3/logsA3.sql
+*.sql.bak

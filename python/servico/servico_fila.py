@@ -21,16 +21,41 @@ class ServicoFila:
 
     # ---------- entrada de clientes ----------
 
-    def gerar_cliente(self, categoria, tipo_servico):
-        cliente = self._entrar_na_fila(categoria, tipo_servico)
+    def gerar_cliente(self, categoria, tipo_servico, idade=None):
+        """
+        Gera um cliente e adiciona na fila.
+        Se idade não for fornecida, gera compatível com a categoria.
+        """
+        if idade is None:
+            # Gerar idade compatível com a categoria
+            if categoria == Categoria.NIVEL_4:
+                import random
+                idade = random.randint(80, 95)
+            elif categoria == Categoria.NIVEL_3:
+                import random
+                idade = random.randint(60, 79)
+            elif categoria == Categoria.NIVEL_2:
+                import random
+                idade = random.randint(18, 70)
+            else:  # NIVEL_1
+                import random
+                idade = random.randint(18, 59)
+        
+        cliente = self._entrar_na_fila(categoria, tipo_servico, idade)
         self._chamar_proximos()
         return cliente
 
-    def _entrar_na_fila(self, categoria, tipo_servico):
+    def _entrar_na_fila(self, categoria, tipo_servico, idade):
         self.contador_senha[categoria] += 1
         senha = f"{categoria.prefixo_senha}{self.contador_senha[categoria]:03d}"
-        cliente = Cliente(self.repo_clientes.proximo_id(), senha, categoria,
-                          tipo_servico, self.relogio.minuto_atual)
+        cliente = Cliente(
+            self.repo_clientes.proximo_id(),
+            senha,
+            categoria,
+            tipo_servico,
+            self.relogio.minuto_atual,
+            idade
+        )
         self.repo_clientes.adicionar(cliente)
         self.heap.inserir(cliente)
         self.repo_eventos.adicionar(
@@ -63,8 +88,8 @@ class ServicoFila:
     def _passar_um_minuto(self, novos):
         self.relogio.avancar(1)
         self._finalizar_atendimentos()
-        for categoria, tipo in novos:
-            self._entrar_na_fila(categoria, tipo)
+        for categoria, idade, tipo in novos:
+            self._entrar_na_fila(categoria, tipo, idade)
         self._aplicar_aging()
         self._verificar_alertas()
         self._chamar_proximos()
@@ -74,17 +99,27 @@ class ServicoFila:
             if not guiche.esta_livre() and guiche.minuto_fim <= self.relogio.minuto_atual:
                 guiche.liberar()
 
-    # ---------- aging ----------
+    # ---------- aging com multiplicador 1.6 ----------
 
     def _aplicar_aging(self):
+        """
+        Aplica o novo algoritmo de aging:
+        - A cada 20 minutos COMPLETOS, multiplica pontuação por 1.6
+        - NIVEL_4 (80+) mantém prioridade absoluta (não entra no cálculo)
+        """
         if not self.config.aging_ativo:
             return
+        
+        # Recalcular a cada intervalo configurado (5 min padrão)
         if self.relogio.minuto_atual % self.config.intervalo_recalculo != 0:
             return
+        
         agora = self.relogio.minuto_atual
         for cliente in self.heap.itens():
-            niveis = cliente.espera(agora) // self.config.minutos_por_nivel
-            cliente.prioridade_efetiva = cliente.categoria.prioridade_base - niveis
+            # Atualizar pontuação baseada no aging
+            cliente.calcular_pontuacao(agora)
+        
+        # Reorganizar heap com novas pontuações
         self.heap.reorganizar()
 
     # ---------- SLA e starvation ----------
@@ -132,17 +167,28 @@ class ServicoFila:
         self._iniciar_atendimento(cliente, guiche, motivo)
 
     def _escolher_proximo(self):
+        """
+        Escolhe próximo cliente considerando:
+        1. NIVEL_4 sempre tem prioridade absoluta
+        2. Cota rotativa (se ativa)
+        3. Aging (pontuação aumentada)
+        """
         if self.config.cota_ativa and self.prioritarios_seguidos >= self.config.cota_n:
             comum = self._comum_mais_antigo()
             if comum is not None:
                 return comum, "COTA"
+        
         primeiro = self.heap.espiar()
-        if primeiro.prioridade_efetiva < primeiro.categoria.prioridade_base:
+        
+        # Verificar se foi beneficiado pelo aging
+        if primeiro.pontuacao_atual > primeiro.pontuacao_inicial:
             return primeiro, "AGING"
+        
         return primeiro, "NORMAL"
 
     def _comum_mais_antigo(self):
-        comuns = [c for c in self.heap.itens() if c.categoria == Categoria.COMUM]
+        """Busca o cliente NIVEL_1 mais antigo na fila."""
+        comuns = [c for c in self.heap.itens() if c.categoria == Categoria.NIVEL_1]
         if not comuns:
             return None
         return min(comuns, key=lambda c: c.chave())
@@ -160,15 +206,32 @@ class ServicoFila:
         self._atualizar_cota(cliente)
 
     def _atualizar_cota(self, cliente):
-        if cliente.categoria == Categoria.PRIORITARIO:
+        """Atualiza contador de cota. NIVEL_3 e NIVEL_4 contam como prioritários."""
+        if cliente.categoria in (Categoria.NIVEL_3, Categoria.NIVEL_4):
             self.prioritarios_seguidos += 1
-        elif cliente.categoria == Categoria.COMUM:
+        elif cliente.categoria == Categoria.NIVEL_1:
             self.prioritarios_seguidos = 0
 
     # ---------- consultas para a interface ----------
 
     def fila_ordenada(self):
+        """Retorna fila ordenada pela pontuação (ordem de atendimento)."""
         return self.heap.listar_ordenado()
+    
+    def fila_por_chegada(self):
+        """
+        Retorna fila na ordem de chegada (cronológica).
+        Mostra apenas clientes que ainda estão aguardando.
+        """
+        # IDs dos clientes que já foram atendidos
+        atendidos_ids = {a.cliente.id_cliente for a in self.repo_atendimentos.listar()}
+        
+        # Filtrar apenas os que ainda estão na fila
+        aguardando = [c for c in self.repo_clientes.listar() 
+                      if c.id_cliente not in atendidos_ids]
+        
+        # Ordenar por ID (ordem de chegada)
+        return sorted(aguardando, key=lambda c: c.id_cliente)
 
     def tamanho_fila(self):
         return self.heap.tamanho()
