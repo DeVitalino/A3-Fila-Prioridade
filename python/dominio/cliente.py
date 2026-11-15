@@ -59,11 +59,20 @@ class Cliente:
     def chave(self):
         """
         Chave de ordenação para o heap (min-heap).
-        Tupla: (pontuacao, id_cliente)
-        - NIVEL_4 sempre primeiro (pontuacao = -inf)
-        - Outros ordenados por pontuação (menor = mais prioritário)
+        Tupla: (prioridade_invertida, id_cliente)
+        
+        Para min-heap funcionar corretamente:
+        - Menor valor = maior prioridade
+        - NIVEL_4 precisa ter o MENOR valor possível
         - Empate resolvido por ordem de chegada (id_cliente)
         """
+        from dominio.categoria import Categoria
+        
+        if self.categoria == Categoria.NIVEL_4:
+            # Menor valor possível = sempre primeiro
+            return (float('-inf'), self.id_cliente)
+        
+        # Negativo da pontuação: quanto MAIOR a pontuação, MENOR o valor (maior prioridade)
         return (-self.pontuacao_atual, self.id_cliente)
 
     def __repr__(self):
