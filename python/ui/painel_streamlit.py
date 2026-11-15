@@ -198,6 +198,14 @@ class PainelStreamlit:
             for posicao, c in enumerate(fila_chegada, start=1):
                 hora_chegada = servico.relogio.para_datetime(c.minuto_chegada).strftime("%H:%M")
                 emoji = "👑" if c.categoria == Categoria.NIVEL_4 else ""
+                tempo_espera = c.espera(agora)
+                
+                # Calcular SLA e status
+                sla_minutos = servico.config.sla[c.categoria]
+                if tempo_espera <= sla_minutos:
+                    status_sla = "DENTRO"
+                else:
+                    status_sla = "FORA"
                 
                 linhas_chegada.append({
                     "Ordem": posicao,
@@ -206,9 +214,11 @@ class PainelStreamlit:
                     "Idade": f"{c.idade}a",
                     "Serviço": c.tipo_servico.nome,
                     "Chegada": hora_chegada,
-                    "Espera": f"{c.espera(agora)} min",
-                    "Pontuação": f"{c.pontuacao_atual:.2f}",
-                    "SLA": servico.situacao_sla(c)
+                    "Espera": f"{tempo_espera} min",
+                    "Tempo Serv.": f"{c.tipo_servico.minutos} min",
+                    "SLA": f"{sla_minutos} min",
+                    "Status": status_sla,
+                    "Situação": "Aguardando"
                 })
             
             if linhas_chegada:
@@ -231,6 +241,14 @@ class PainelStreamlit:
                 hora_chegada = servico.relogio.para_datetime(c.minuto_chegada).strftime("%H:%M")
                 emoji = "👑" if c.categoria == Categoria.NIVEL_4 else ""
                 ordem_original = ordem_chegada_map.get(c.senha, posicao)
+                tempo_espera = c.espera(agora)
+                
+                # Calcular SLA e status
+                sla_minutos = servico.config.sla[c.categoria]
+                if tempo_espera <= sla_minutos:
+                    status_sla = "DENTRO"
+                else:
+                    status_sla = "FORA"
                 
                 linhas_ordenada.append({
                     "Pos": posicao,
@@ -240,9 +258,11 @@ class PainelStreamlit:
                     "Idade": f"{c.idade}a",
                     "Serviço": c.tipo_servico.nome,
                     "Chegada": hora_chegada,
-                    "Espera": f"{c.espera(agora)} min",
-                    "Pontuação": f"{c.pontuacao_atual:.2f}",
-                    "SLA": servico.situacao_sla(c)
+                    "Espera": f"{tempo_espera} min",
+                    "Tempo Serv.": f"{c.tipo_servico.minutos} min",
+                    "SLA": f"{sla_minutos} min",
+                    "Status": status_sla,
+                    "Situação": "Aguardando"
                 })
             
             if linhas_ordenada:
