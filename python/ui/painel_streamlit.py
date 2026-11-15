@@ -144,13 +144,12 @@ class PainelStreamlit:
             st.caption("Distribuição: 1% N4, 12% N3, 10% N2, 77% N1")
             if st.button("🎲 Gerar aleatórios"):
                 quantidade_solicitada = int(qtd)
-                # Gerar TODOS os clientes primeiro (sem alocar a guichês)
+                # Gerar todos os clientes na fila (SEM alocar a guichês)
                 for i in range(quantidade_solicitada):
                     cat, idade, tp = st.session_state.gerador.sortear_cliente()
-                    # Usar _entrar_na_fila ao invés de gerar_cliente para não chamar _chamar_proximos
                     servico._entrar_na_fila(cat, tp, idade)
-                # AGORA sim chamar para alocar aos guichês disponíveis
-                servico._chamar_proximos()
+                # NÃO chamar _chamar_proximos() - deixa todos na fila
+                # Atendimento só começa ao avançar tempo ou manualmente
                 st.rerun()
         
         with col3:
