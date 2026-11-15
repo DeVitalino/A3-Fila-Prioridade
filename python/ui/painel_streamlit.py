@@ -270,19 +270,31 @@ class PainelStreamlit:
         }
         
         linhas = []
-        for a in reversed(atendimentos):
+        # Enumerar para obter ordem cronológica de chegada
+        for ordem, a in enumerate(reversed(atendimentos), start=1):
             emoji = "👑" if a.cliente.categoria == Categoria.NIVEL_4 else ""
+            
+            # Calcular tempo de atendimento (duração no guichê)
+            tempo_atendimento = a.minuto_fim - a.minuto_inicio
+            
+            # Horários formatados
+            hora_chegada = st.session_state.servico.relogio.para_datetime(a.cliente.minuto_chegada).strftime("%H:%M")
+            hora_chamado = st.session_state.servico.relogio.para_datetime(a.minuto_inicio).strftime("%H:%M")
+            
             linhas.append({
+                "Ordem": len(atendimentos) - ordem + 1,  # Ordem cronológica (1, 2, 3...)
                 "Senha": f"{emoji}{a.cliente.senha}",
                 "Nível": a.cliente.categoria.nome_curto,
                 "Idade": f"{a.cliente.idade}a",
-                "Serviço": a.cliente.tipo_servico.nome,  # ADICIONADO
-                "Guichê": a.id_guiche,
-                "Início": st.session_state.servico.relogio.para_datetime(a.minuto_inicio).strftime("%H:%M"),
+                "Serviço": a.cliente.tipo_servico.nome,
+                "Chegada": hora_chegada,
+                "Chamado": hora_chamado,
                 "Espera": f"{a.tempo_espera} min",
+                "Atendimento": f"{tempo_atendimento} min",
+                "Guichê": a.id_guiche,
                 "SLA": f"{a.sla_minutos} min",
                 "Status": a.status_sla,
-                "Motivo": traducao_motivo.get(a.motivo, a.motivo)  # TRADUZIDO
+                "Motivo": traducao_motivo.get(a.motivo, a.motivo)
             })
         
         df = pd.DataFrame(linhas)
