@@ -56,20 +56,24 @@ class PainelStreamlit:
         servico = st.session_state.servico
         st.subheader(f"⏰ Horário simulado: {servico.relogio.agora().strftime('%d/%m/%Y %H:%M')}")
         
-        # 4 abas reorganizadas
-        aba_filas, aba_guiches, aba_atendimentos, aba_indicadores = st.tabs([
-            "📋 Filas",
+        # 3 abas: Filas+Atendimentos, Guichês, Indicadores
+        aba_filas, aba_guiches, aba_indicadores = st.tabs([
+            "📋 Fila e Atendimentos",
             "🪟 Guichês",
-            "📊 Atendimentos",
             "📈 Indicadores e Auditoria"
         ])
         
         with aba_filas:
+            # Fila de pessoas aguardando
             self.mostrar_duas_filas()
+            # Separador visual
+            st.divider()
+            # Histórico de atendimentos logo abaixo
+            self.mostrar_historico()
+            
         with aba_guiches:
             self.mostrar_guiches()
-        with aba_atendimentos:
-            self.mostrar_historico()
+            
         with aba_indicadores:
             self.mostrar_metricas()
             st.divider()
