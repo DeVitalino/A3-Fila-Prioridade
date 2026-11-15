@@ -1,12 +1,15 @@
+"""
+Testes da cota rotativa (atualizados para 4 níveis).
+"""
 from dominio.categoria import Categoria
 from testes.auxiliar import FINANCIAMENTO, SAQUE, montar_servico
 
 
 def montar_fila_com_prioritarios(servico, quantidade):
-    servico.gerar_cliente(Categoria.VIP, FINANCIAMENTO)  # segura o guichê
-    comum = servico.gerar_cliente(Categoria.COMUM, SAQUE)
+    servico.gerar_cliente(Categoria.NIVEL_3, FINANCIAMENTO, idade=65)
+    comum = servico.gerar_cliente(Categoria.NIVEL_1, SAQUE, idade=30)
     for _ in range(quantidade):
-        servico.gerar_cliente(Categoria.PRIORITARIO, SAQUE)
+        servico.gerar_cliente(Categoria.NIVEL_3, SAQUE, idade=70)
     return comum
 
 
@@ -19,8 +22,8 @@ def test_cota_chama_comum_depois_de_n_prioritarios():
     comum = montar_fila_com_prioritarios(servico, 5)
     servico.avancar_tempo(25 + 3 * 3)
     ordem = senhas_atendidas(servico)
-    # V001, depois dois prioritários, depois o comum pela cota
-    assert ordem[1:3] == ["P001", "P002"]
+    # N3-001, depois dois N3, depois o comum pela cota
+    assert ordem[1:3] == ["N3002", "N3003"]
     assert ordem[3] == comum.senha
     assert servico.repo_atendimentos.listar()[3].motivo == "COTA"
 
@@ -34,8 +37,8 @@ def test_sem_cota_o_comum_espera_todos_os_prioritarios():
 
 def test_cota_ignorada_quando_nao_tem_comum_esperando():
     servico = montar_servico(qtd_guiches=1, cota_n=1, aging_ativo=False)
-    servico.gerar_cliente(Categoria.VIP, FINANCIAMENTO)
+    servico.gerar_cliente(Categoria.NIVEL_3, FINANCIAMENTO, idade=65)
     for _ in range(3):
-        servico.gerar_cliente(Categoria.PRIORITARIO, SAQUE)
+        servico.gerar_cliente(Categoria.NIVEL_3, SAQUE, idade=70)
     servico.avancar_tempo(25 + 3 * 3)
     assert len(servico.repo_atendimentos.listar()) == 4
