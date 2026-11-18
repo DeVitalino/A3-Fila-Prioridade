@@ -1,3 +1,6 @@
-from ui.painel_streamlit import PainelStreamlit
+"""Ponto de entrada do sistema."""
 
-PainelStreamlit().mostrar()
+from streamlit_pagina import main
+
+if __name__ == "__main__":
+    main()

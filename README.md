@@ -105,6 +105,30 @@ Onde:
 
 ---
 
+## 🎨 Interface Streamlit — Design System Fila Justa
+
+A interface foi reorganizada com foco em leitura rápida e operação simples. O visual utiliza fundo claro, cabeçalho em degradê azul-marinho/verde-azulado, cartões com bordas semânticas por categoria, indicadores em destaque e navegação horizontal.
+
+### Telas
+
+- **Painel:** indicadores principais, cadastro manual, geração aleatória, avanço do relógio, teste de estresse, guichês e prévia da fila.
+- **Filas:** comparação entre ordem de chegada e ordem calculada pelo heap.
+- **Guichês:** situação individual dos guichês, cliente em atendimento e tempo restante.
+- **Atendimentos:** histórico completo dos atendimentos realizados.
+- **Indicadores:** médias por categoria, percentual dentro do SLA, alertas e exportação SQL.
+
+### Organização da interface
+
+A camada visual está em `python/interface/`:
+- `estilo.py`: paleta, temas e CSS centralizado.
+- `componentes.py`: componentes HTML com escape de dados.
+- `compat.py`: compatibilidade de largura de tabelas.
+- `estado.py`: criação e recuperação da simulação em `st.session_state`.
+- `paginas.py`: telas do Streamlit.
+- `app.py`: navegação e inicialização.
+
+A lógica de domínio, serviços e repositórios permanece nos pacotes existentes e não importa Streamlit.
+
 ## 📁 Estrutura do Projeto
 
 ```
