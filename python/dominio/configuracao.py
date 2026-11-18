@@ -54,3 +54,7 @@ class Configuracao:
             raise ValueError("O percentual de alerta deve estar entre 0 e 1")
         if self.limite_starvation < 1:
             raise ValueError("O limite de starvation deve ser maior que zero")
+        if set(self.sla) != set(Categoria):
+            raise ValueError("É necessário definir o tempo máximo de espera para os quatro níveis")
+        if any(not isinstance(minutos, int) or minutos < 1 for minutos in self.sla.values()):
+            raise ValueError("O tempo máximo de espera de cada nível deve ser um número inteiro maior que zero")

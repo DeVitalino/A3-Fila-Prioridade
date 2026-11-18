@@ -17,7 +17,12 @@ from servico.servico_fila import ServicoFila
 
 class PainelStreamlit:
     def __init__(self):
-        st.set_page_config(page_title="Simulador Fila Bancária - A3", layout="wide")
+        st.set_page_config(
+            page_title="Fila Prioritária | Simulador A3",
+            page_icon="🏦",
+            layout="wide",
+            initial_sidebar_state="expanded",
+        )
         self.tipos = catalogo_padrao()
         if "servico" not in st.session_state:
             self.reiniciar(Configuracao(), 42)
@@ -38,8 +43,31 @@ class PainelStreamlit:
     # ---------- tela principal ----------
 
     def mostrar(self):
-        st.title("🏦 Simulador de Fila Bancária - Sistema de 4 Níveis de Prioridade")
-        st.caption("Projeto A3 - Estrutura de Dados: Filas de Prioridade com Envelhecimento")
+        st.markdown("""
+        <style>
+        .stApp { background: #f5f7fb; }
+        [data-testid="stHeader"] { background: rgba(245,247,251,.92); }
+        [data-testid="stSidebar"] { background: #111827; }
+        [data-testid="stSidebar"] * { color: #f3f4f6; }
+        [data-testid="stSidebar"] input, [data-testid="stSidebar"] [data-baseweb="select"] { color: #111827 !important; }
+        [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p { color: #e5e7eb !important; }
+        .hero { padding: 1.35rem 1.6rem; border-radius: 18px; color: white;
+                background: linear-gradient(115deg,#14213d 0%,#1d4ed8 65%,#0f766e 100%);
+                margin: .2rem 0 1.2rem 0; box-shadow: 0 8px 24px rgba(30,64,175,.14); }
+        .hero h1 { color: white; font-size: 1.8rem; margin: 0 0 .3rem 0; }
+        .hero p { color: #dbeafe; margin: 0; font-size: .95rem; }
+        div[data-testid="stMetric"] { background: white; border: 1px solid #e7ebf2;
+                padding: 14px 16px; border-radius: 14px; box-shadow: 0 2px 8px rgba(15,23,42,.035); }
+        div[data-testid="stTabs"] button { font-weight: 600; }
+        div[data-testid="stDataFrame"] { border-radius: 12px; overflow: hidden; }
+        div.stButton > button, div.stDownloadButton > button { border-radius: 10px; font-weight: 600; min-height: 2.6rem; }
+        div[data-testid="stVerticalBlock"] > div:has(> div > .control-card) { gap: .4rem; }
+        </style>
+        <div class="hero">
+          <h1>🏦 Central de Atendimento</h1>
+          <p>Simulador de filas com quatro níveis de prioridade, envelhecimento e acompanhamento de SLA.</p>
+        </div>
+        """, unsafe_allow_html=True)
         self.mostrar_configuracao()
         self.mostrar_controles()
         if st.session_state.get("automatico"):
@@ -85,28 +113,34 @@ class PainelStreamlit:
 
     def mostrar_configuracao(self):
         with st.sidebar:
-            st.header("⚙️ Configuração")
-            qtd_guiches = st.number_input("Guichês", 1, 10, 3)
-            semente_txt = st.text_input("Semente (vazio = aleatória)", "42")
-            
-            st.subheader("Envelhecimento (Fixo)")
-            st.info("✓ Multiplicador: 1.6x a cada 20 minutos\n✓ NÍVEL 4 (80+): prioridade absoluta")
-            aging_ativo = st.checkbox("Envelhecimento ativo", True)
-            intervalo = st.number_input("Recalcular a cada (min)", 1, 60, 5)
-            
-            st.subheader("Cota Rotativa")
-            cota_ativa = st.checkbox("Cota rotativa ativa", True)
-            cota_n = st.number_input("Prioritários seguidos antes de 1 comum (N)", 1, 20, 3)
-            
-            st.subheader("SLA por Nível")
-            st.caption("SLA = Tempo máximo de espera tolerado")
-            sla_n4 = st.number_input("SLA Nível 4 (80+) - min", 1, 240, 10)
-            sla_n3 = st.number_input("SLA Nível 3 (60-79) - min", 1, 240, 15)
-            sla_n2 = st.number_input("SLA Nível 2 (PCD) - min", 1, 240, 20)
-            sla_n1 = st.number_input("SLA Nível 1 (Comum) - min", 1, 240, 30)
-            limite = st.number_input("Limite de starvation (min)", 1, 480, 40)
-            
-            if st.button("✨ Aplicar e reiniciar"):
+            st.markdown("## ⚙️ Configurações")
+            st.caption("Defina as regras antes de iniciar uma nova simulação.")
+            qtd_guiches = st.number_input("Quantidade de guichês", 1, 10, 3, key="cfg_guiches")
+            semente_txt = st.text_input("Semente aleatória (opcional)", "42", key="cfg_semente")
+
+            st.divider()
+            with st.expander("🧭 Envelhecimento da fila", expanded=False):
+                st.caption("O envelhecimento aumenta a prioridade de quem espera há mais tempo.")
+                aging_ativo = st.checkbox("Ativar envelhecimento", True, key="cfg_aging")
+                intervalo = st.number_input("Recalcular a cada (minutos)", 1, 60, 5, key="cfg_intervalo")
+                st.info("Regra atual do algoritmo: multiplicador de 1,6x a cada 20 minutos. O nível 4 mantém prioridade absoluta.")
+
+            with st.expander("🔄 Cota rotativa", expanded=False):
+                st.caption("Evita que pessoas sem prioridade especial aguardem indefinidamente.")
+                cota_ativa = st.checkbox("Ativar cota rotativa", True, key="cfg_cota")
+                cota_n = st.number_input("Prioritários antes de chamar 1 comum", 1, 20, 3, key="cfg_cota_n")
+
+            st.markdown("### ⏱️ Tempo máximo de espera")
+            st.caption("Configure o limite de espera na fila (SLA) de cada grupo. Os quatro valores podem ser alterados independentemente. Esse limite mede a espera até ser chamado, não a duração do serviço no guichê.")
+            sla_n4 = st.number_input("Nível 4 · 80 anos ou mais (min)", 1, 480, 10, key="cfg_sla_n4", help="Tempo máximo de espera previsto para pessoas com 80 anos ou mais.")
+            sla_n3 = st.number_input("Nível 3 · 60 a 79 anos (min)", 1, 480, 15, key="cfg_sla_n3")
+            sla_n2 = st.number_input("Nível 2 · Pessoa com deficiência (min)", 1, 480, 20, key="cfg_sla_n2")
+            sla_n1 = st.number_input("Nível 1 · Sem prioridade especial (min)", 1, 480, 30, key="cfg_sla_n1")
+            st.caption(f"Resumo configurado: N4 {sla_n4} min · N3 {sla_n3} min · N2 {sla_n2} min · N1 {sla_n1} min")
+            limite = st.number_input("Limite para detectar espera excessiva (min)", 1, 720, 40, key="cfg_limite")
+
+            st.divider()
+            if st.button("✨ Aplicar configurações e reiniciar", type="primary", use_container_width=True):
                 config = Configuracao(
                     qtd_guiches=int(qtd_guiches),
                     aging_ativo=aging_ativo,
@@ -117,14 +151,17 @@ class PainelStreamlit:
                         Categoria.NIVEL_4: int(sla_n4),
                         Categoria.NIVEL_3: int(sla_n3),
                         Categoria.NIVEL_2: int(sla_n2),
-                        Categoria.NIVEL_1: int(sla_n1)
+                        Categoria.NIVEL_1: int(sla_n1),
                     },
-                    limite_starvation=int(limite))
+                    limite_starvation=int(limite),
+                )
                 semente = int(semente_txt) if semente_txt.strip().isdigit() else None
                 self.reiniciar(config, semente)
+                st.session_state.automatico = False
+                st.success("Configurações aplicadas. Simulação reiniciada.")
                 st.rerun()
-            
-            st.checkbox("🚀 Modo automático (1 min/segundo)", key="automatico")
+
+            st.checkbox("🚀 Modo automático (1 min por segundo)", key="automatico")
 
     # ---------- controles ----------
 
